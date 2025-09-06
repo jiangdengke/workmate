@@ -1,0 +1,30 @@
+server:
+  port: 8080
+logging:
+  level:
+    org.jooq.tools.LoggerListener: OFF
+    # 打开我们自定义的精简日志
+    jooq.sql: INFO
+
+cors:
+  allowedOrigins: ${ALLOWED_ORIGINS}
+  allowedMethods: ${ALLOWED_METHODS}
+  allowedHeaders: ${ALLOWED_HEADERS}
+  allowedExposeHeaders: ${ALLOWED_EXPOSE_HEADERS}
+spring:
+  application:
+    name: workmate
+  config:
+    import: optional:file:.env[.properties]   # ?????? .env
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+
+  jooq:
+    sql-dialect: MYSQL
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
