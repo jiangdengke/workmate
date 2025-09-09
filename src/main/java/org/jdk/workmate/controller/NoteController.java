@@ -19,20 +19,19 @@ public class NoteController {
   @PostMapping("/notes")
   @ResponseStatus(HttpStatus.CREATED)
   public NoteDtos.Resp create(@RequestBody @Valid NoteDtos.CreateReq req) {
-    return service.create(req.userName(), req.text());
+    return service.create(org.jdk.workmate.security.CurrentUser.id(), req.text());
   }
 
-  @GetMapping("/users/{userName}/notes")
+  @GetMapping("/notes")
   public List<NoteDtos.Resp> listByUser(
-      @PathVariable String userName,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
-    return service.listByUser(userName, page, size);
+    return service.listByUser(org.jdk.workmate.security.CurrentUser.id(), page, size);
   }
 
   @DeleteMapping("/notes/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(@PathVariable long id) {
-    service.delete(id);
+    service.delete(org.jdk.workmate.security.CurrentUser.id(), id);
   }
 }

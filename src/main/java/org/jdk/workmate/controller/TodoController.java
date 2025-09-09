@@ -19,7 +19,7 @@ public class TodoController {
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public TodoDtos.Resp create(@RequestBody @Valid TodoDtos.CreateReq req) {
-    return service.create(req.title());
+    return service.create(org.jdk.workmate.security.CurrentUser.id(), req.title());
   }
 
   @GetMapping
@@ -27,18 +27,18 @@ public class TodoController {
       @RequestParam(required = false) Boolean done,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
-    return service.list(done, page, size);
+    return service.list(org.jdk.workmate.security.CurrentUser.id(), done, page, size);
   }
 
   @PatchMapping("/{id}/done")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void setDone(@PathVariable long id, @RequestBody TodoDtos.UpdateDoneReq req) {
-    service.setDone(id, req.done());
+    service.setDone(org.jdk.workmate.security.CurrentUser.id(), id, req.done());
   }
 
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(@PathVariable long id) {
-    service.delete(id);
+    service.delete(org.jdk.workmate.security.CurrentUser.id(), id);
   }
 }

@@ -61,29 +61,31 @@ repositories {
 dependencies {
     // ===== Spring Boot 核心能力 =====
     implementation("org.springframework.boot:spring-boot-starter-actuator") // 健康检查、指标等
-    implementation("org.springframework.boot:spring-boot-starter-jooq")     // jOOQ 与 Spring 集成
-    implementation("org.springframework.boot:spring-boot-starter-validation")// Bean 校验（Jakarta Validation）
-    implementation("org.springframework.boot:spring-boot-starter-web")       // Web MVC（JSON/REST）
-    implementation("org.springframework.boot:spring-boot-starter-aop")       // AOP（切面/拦截）
+    implementation("org.springframework.boot:spring-boot-starter-jooq") // jOOQ 与 Spring 集成
+    implementation("org.springframework.boot:spring-boot-starter-validation") // Bean 校验（Jakarta Validation）
+    implementation("org.springframework.boot:spring-boot-starter-web") // Web MVC（JSON/REST）
+    implementation("org.springframework.boot:spring-boot-starter-aop") // AOP（切面/拦截）
 
     // ===== 常用工具库 =====
-    implementation("org.apache.commons:commons-lang3:3.17.0")                // 字符串/对象工具
-    implementation("org.apache.commons:commons-collections4:4.4")            // 集合扩展
+    implementation("org.apache.commons:commons-lang3:3.17.0") // 字符串/对象工具
+    implementation("org.apache.commons:commons-collections4:4.4") // 集合扩展
 
     // ===== OpenAPI / Swagger UI（基于 springdoc）=====
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("com.auth0:java-jwt:4.4.0")
 
     // ===== jOOQ 运行/元数据依赖 =====
-    implementation("org.jooq:jooq-meta:$jooqVersion")                        // 读取数据库元数据/DDL
+    implementation("org.jooq:jooq-meta:$jooqVersion") // 读取数据库元数据/DDL
 
     // ===== 测试容器（集成测试用 Docker 化依赖，如 PostgreSQL）=====
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
-    testImplementation("org.testcontainers:mysql:${testcontainersVersion}")
+    testImplementation("org.testcontainers:mysql:$testcontainersVersion")
     // 注意：BOM 通常建议用 platform() 引入，这里保持你的写法
     testImplementation("org.testcontainers:testcontainers-bom:$testcontainersVersion")
 
     // ===== JDBC 驱动 =====
-    runtimeOnly("com.mysql:mysql-connector-j")                                  // 生产/运行期 PostgreSQL 驱动
+    runtimeOnly("com.mysql:mysql-connector-j") // 生产/运行期 PostgreSQL 驱动
 
     // ===== Lombok / 注解处理器 =====
     compileOnly("org.projectlombok:lombok")
@@ -97,10 +99,12 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.springframework.boot:spring-boot-starter-webflux") // WebTestClient 等
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.springframework.security:spring-security-test")     // 若涉及安全测试可用
+    testImplementation("org.springframework.security:spring-security-test") // 若涉及安全测试可用
+    // 邮件
+    implementation("org.springframework.boot:spring-boot-starter-mail")
 
     // ===== jOOQ 代码生成期依赖（用于 codegen 任务，不参与运行期）=====
-    jooqCodegen("org.jooq:jooq-codegen:$jooqVersion")         // jOOQ 代码生成器
+    jooqCodegen("org.jooq:jooq-codegen:$jooqVersion") // jOOQ 代码生成器
     jooqCodegen("org.jooq:jooq-meta-extensions:$jooqVersion") // 扩展（如 DDLDatabase）
 
     // ===== 可选：JSR 注解（空值标注）=====
@@ -155,7 +159,7 @@ spotless {
     // Java 源码格式化：Google Java Format
     java {
         googleJavaFormat("1.28.0").reflowLongStrings() // 长字符串自动换行
-        formatAnnotations()                            // 统一注解样式
+        formatAnnotations() // 统一注解样式
     }
 
     // 针对 Gradle Kotlin 脚本的格式化
@@ -172,25 +176,40 @@ jooq {
             database {
                 name = "org.jooq.meta.extensions.ddl.DDLDatabase"
                 properties {
-                    property { key = "scripts"; value = "src/main/resources/db/*.sql" }
-                    property { key = "dialect"; value = "MYSQL" }       // 告诉解析器按 MySQL 语法读
-                    property { key = "sort"; value = "semantic" }
-                    property { key = "unqualifiedSchema"; value = "none" }
-                    property { key = "defaultNameCase"; value = "lower" }
+                    property {
+                        key = "scripts"
+                        value = "src/main/resources/db/*.sql"
+                    }
+                    property {
+                        key = "dialect"
+                        value = "MYSQL"
+                    } // 告诉解析器按 MySQL 语法读
+                    property {
+                        key = "sort"
+                        value = "semantic"
+                    }
+                    property {
+                        key = "unqualifiedSchema"
+                        value = "none"
+                    }
+                    property {
+                        key = "defaultNameCase"
+                        value = "lower"
+                    }
                 }
 
-                isUnsignedTypes = false   // 在 DDLDatabase 下不总是生效，但留着无妨
+                isUnsignedTypes = false // 在 DDLDatabase 下不总是生效，但留着无妨
 
                 // ✅ 关键：用列名匹配强制类型（比按“原始类型字符串”更可靠）
                 forcedTypes {
                     // 所有主键 id（根据你的三张表逐列列出或用正则）
                     forcedType {
-                        name = "BIGINT"                                     // 生成成 Java Long
-                        includeExpression = "(?i).*\\.notes\\.id|.*\\.todos\\.id|.*\\.reminders\\.id"
+                        name = "BIGINT" // 生成成 Java Long
+                        includeExpression = "(?i).*\\.(users|notes|todos|reminders)\\.id|.*\\.(user_id)"
                     }
                     // 其他容易被识别错/降级的类型也可以按需强制（可选）
                     forcedType {
-                        name = "TIMESTAMP"                                  // 对应 DATETIME(3)
+                        name = "TIMESTAMP" // 对应 DATETIME(3)
                         includeExpression = "(?i).*\\.(created_at|done_at|at_time)"
                     }
                     forcedType {
@@ -204,7 +223,7 @@ jooq {
                     }
                     forcedType {
                         name = "VARCHAR"
-                        includeExpression = "(?i).*\\.(user_name)"
+                        includeExpression = "(?i).*\\.(user_name|email|display_name|password)"
                     }
                 }
             }
@@ -223,5 +242,3 @@ jooq {
         }
     }
 }
-
-

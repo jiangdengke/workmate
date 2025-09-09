@@ -19,21 +19,20 @@ public class ReminderController {
   @PostMapping("/reminders")
   @ResponseStatus(HttpStatus.CREATED)
   public ReminderDtos.Resp create(@RequestBody @Valid ReminderDtos.CreateReq req) {
-    return service.create(req.userName(), req.text(), req.atTime());
+    return service.create(org.jdk.workmate.security.CurrentUser.id(), req.text(), req.atTime());
   }
 
-  @GetMapping("/users/{userName}/reminders")
+  @GetMapping("/reminders")
   public List<ReminderDtos.Resp> list(
-      @PathVariable String userName,
       @RequestParam(defaultValue = "all") String status,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
-    return service.listByUser(userName, status, page, size);
+    return service.listByUser(org.jdk.workmate.security.CurrentUser.id(), status, page, size);
   }
 
   @DeleteMapping("/reminders/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(@PathVariable long id) {
-    service.delete(id);
+    service.delete(org.jdk.workmate.security.CurrentUser.id(), id);
   }
 }

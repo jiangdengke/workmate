@@ -17,24 +17,24 @@ public class TodoService {
   private final TodoRepository repo;
 
   @Transactional
-  public TodoDtos.Resp create(String title) {
-    Long id = repo.create(title);
+  public TodoDtos.Resp create(long userId, String title) {
+    Long id = repo.create(userId, title);
     return repo.get(id);
   }
 
   @Transactional
-  public void setDone(long id, boolean done) {
-    repo.setDone(id, done, Instant.now());
+  public void setDone(long userId, long id, boolean done) {
+    repo.setDone(userId, id, done, Instant.now());
   }
 
   @Transactional(readOnly = true)
-  public List<TodoDtos.Resp> list(Boolean done, int page, int size) {
-    return repo.list(done, page, size);
+  public List<TodoDtos.Resp> list(long userId, Boolean done, int page, int size) {
+    return repo.list(userId, done, page, size);
   }
 
   @Transactional
-  public void delete(long id) {
-    int n = repo.delete(id);
+  public void delete(long userId, long id) {
+    int n = repo.delete(userId, id);
     if (n == 0) throw new NotFoundException("Todo not found: " + id);
   }
 }

@@ -18,25 +18,26 @@ public class TodoRepository {
 
   private final DSLContext dsl;
 
-  public Long create(String title) {
+  public Long create(long userId, String title) {
     return dsl.insertInto(TODOS)
+        .set(TODOS.USER_ID, userId)
         .set(TODOS.TITLE, title)
         .returningResult(TODOS.ID)
         .fetchOne(TODOS.ID, Long.class);
   }
 
-  public void setDone(long id, boolean done, Instant now) {
+  public void setDone(long userId, long id, boolean done, Instant now) {
     int n =
         dsl.update(TODOS)
             .set(TODOS.DONE, done)
             .set(TODOS.DONE_AT, done ? TimeUtil.toLdt(now) : null)
-            .where(TODOS.ID.eq(id))
+            .where(TODOS.ID.eq(id).and(TODOS.USER_ID.eq(userId)))
             .execute();
     if (n == 0) throw new NotFoundException("Todo not found: " + id);
   }
 
-  public int delete(long id) {
-    return dsl.deleteFrom(TODOS).where(TODOS.ID.eq(id)).execute();
+  public int delete(long userId, long id) {
+    return dsl.deleteFrom(TODOS).where(TODOS.ID.eq(id).and(TODOS.USER_ID.eq(userId))).execute();
   }
 
   public TodoDtos.Resp get(long id) {
@@ -45,9 +46,9 @@ public class TodoRepository {
     return map(r.getId(), r.getTitle(), r.getDone(), r.getCreatedAt(), r.getDoneAt());
   }
 
-  public List<TodoDtos.Resp> list(Boolean done, int page, int size) {
-    var sel = dsl.selectFrom(TODOS);
-    if (done != null) sel.where(TODOS.DONE.eq(done));
+  public List<TodoDtos.Resp> list(long userId, Boolean done, int page, int size) {
+    var sel = dsl.selectFrom(TODOS).where(TODOS.USER_ID.eq(userId));
+    if (done != null) sel.and(TODOS.DONE.eq(done));
     return sel.orderBy(TODOS.CREATED_AT.desc())
         .limit(size)
         .offset(page * size)

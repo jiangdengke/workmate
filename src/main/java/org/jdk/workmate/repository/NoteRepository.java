@@ -17,10 +17,10 @@ public class NoteRepository {
 
   private final DSLContext dsl;
 
-  public Long create(String userName, String text) {
+  public Long create(long userId, String text) {
     var rec =
         dsl.insertInto(NOTES)
-            .set(NOTES.USER_NAME, userName)
+            .set(NOTES.USER_ID, userId)
             .set(NOTES.TEXT, text)
             .returning(NOTES.ID)
             .fetchOne();
@@ -29,23 +29,20 @@ public class NoteRepository {
     return rec.get(NOTES.ID);
   }
 
-  public int delete(long id) {
-    return dsl.deleteFrom(NOTES).where(NOTES.ID.eq(id)).execute();
+  public int delete(long userId, long id) {
+    return dsl.deleteFrom(NOTES).where(NOTES.ID.eq(id).and(NOTES.USER_ID.eq(userId))).execute();
   }
 
   public NoteDtos.Resp get(long id) {
     var r = dsl.selectFrom(NOTES).where(NOTES.ID.eq(id)).fetchOne();
     if (r == null) throw new NotFoundException("Note not found: " + id);
     return new NoteDtos.Resp(
-        r.get(NOTES.ID),
-        r.get(NOTES.USER_NAME),
-        r.get(NOTES.TEXT),
-        TimeUtil.toInstant(r.get(NOTES.CREATED_AT)));
+        r.get(NOTES.ID), r.get(NOTES.TEXT), TimeUtil.toInstant(r.get(NOTES.CREATED_AT)));
   }
 
-  public List<NoteDtos.Resp> listByUser(String userName, int page, int size) {
+  public List<NoteDtos.Resp> listByUser(long userId, int page, int size) {
     return dsl.selectFrom(NOTES)
-        .where(NOTES.USER_NAME.eq(userName))
+        .where(NOTES.USER_ID.eq(userId))
         .orderBy(NOTES.CREATED_AT.desc())
         .limit(size)
         .offset(page * size)
@@ -53,7 +50,6 @@ public class NoteRepository {
             r ->
                 new NoteDtos.Resp(
                     r.get(NOTES.ID),
-                    r.get(NOTES.USER_NAME),
                     r.get(NOTES.TEXT),
                     TimeUtil.toInstant(r.get(NOTES.CREATED_AT))));
   }

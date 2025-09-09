@@ -18,9 +18,9 @@ public class ReminderRepository {
 
   private final DSLContext dsl;
 
-  public Long create(String userName, String text, Instant at) {
+  public Long create(long userId, String text, Instant at) {
     return dsl.insertInto(REMINDERS)
-        .set(REMINDERS.USER_NAME, userName)
+        .set(REMINDERS.USER_ID, userId)
         .set(REMINDERS.TEXT, text)
         .set(REMINDERS.AT_TIME, TimeUtil.toLdt(at))
         .returningResult(REMINDERS.ID)
@@ -30,17 +30,18 @@ public class ReminderRepository {
   public ReminderDtos.Resp get(long id) {
     var r = dsl.selectFrom(REMINDERS).where(REMINDERS.ID.eq(id)).fetchOne();
     if (r == null) throw new NotFoundException("Reminder not found: " + id);
-    return map(
-        r.getId(), r.getUserName(), r.getText(), r.getAtTime(), r.getSent(), r.getCreatedAt());
+    return map(r.getId(), r.getText(), r.getAtTime(), r.getSent(), r.getCreatedAt());
   }
 
-  public int delete(long id) {
-    return dsl.deleteFrom(REMINDERS).where(REMINDERS.ID.eq(id)).execute();
+  public int delete(long userId, long id) {
+    return dsl.deleteFrom(REMINDERS)
+        .where(REMINDERS.ID.eq(id).and(REMINDERS.USER_ID.eq(userId)))
+        .execute();
   }
 
   public List<ReminderDtos.Resp> listByUser(
-      String userName, String status, int page, int size, Instant now) {
-    var sel = dsl.selectFrom(REMINDERS).where(REMINDERS.USER_NAME.eq(userName));
+      long userId, String status, int page, int size, Instant now) {
+    var sel = dsl.selectFrom(REMINDERS).where(REMINDERS.USER_ID.eq(userId));
     var nowLdt = TimeUtil.toLdt(now);
 
     switch (status == null ? "all" : status.toLowerCase()) {
@@ -56,12 +57,7 @@ public class ReminderRepository {
         .fetch(
             r ->
                 map(
-                    r.getId(),
-                    r.getUserName(),
-                    r.getText(),
-                    r.getAtTime(),
-                    r.getSent(),
-                    r.getCreatedAt()));
+                    r.getId(), r.getText(), r.getAtTime(), r.getSent(), r.getCreatedAt()));
   }
 
   public List<ReminderDtos.Resp> listDue(int max, Instant now) {
@@ -72,13 +68,7 @@ public class ReminderRepository {
         .limit(max)
         .fetch(
             r ->
-                map(
-                    r.getId(),
-                    r.getUserName(),
-                    r.getText(),
-                    r.getAtTime(),
-                    r.getSent(),
-                    r.getCreatedAt()));
+                map(r.getId(), r.getText(), r.getAtTime(), r.getSent(), r.getCreatedAt()));
   }
 
   public void markSent(long id) {
@@ -87,18 +77,8 @@ public class ReminderRepository {
   }
 
   private ReminderDtos.Resp map(
-      Long id,
-      String user,
-      String text,
-      java.time.LocalDateTime at,
-      Boolean sent,
-      java.time.LocalDateTime created) {
+      Long id, String text, java.time.LocalDateTime at, Boolean sent, java.time.LocalDateTime created) {
     return new ReminderDtos.Resp(
-        id,
-        user,
-        text,
-        TimeUtil.toInstant(at),
-        Boolean.TRUE.equals(sent),
-        TimeUtil.toInstant(created));
+        id, text, TimeUtil.toInstant(at), Boolean.TRUE.equals(sent), TimeUtil.toInstant(created));
   }
 }

@@ -25,6 +25,27 @@ spring:
   jooq:
     sql-dialect: MYSQL
 
+  mail:
+    host: ${MAIL_HOST:smtp.qq.com}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    port: ${MAIL_PORT:465}
+    default-encoding: UTF-8
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          ssl:
+            enable: true
+          auth: true
+          # Some SMTPs require a sensible EHLO hostname; override via MAIL_LOCALHOST if needed
+          localhost: ${MAIL_LOCALHOST:localhost}
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-secret}
+    ttlSeconds: 2592000

@@ -19,19 +19,19 @@ public class ReminderService {
   private final ReminderRepository repo;
 
   @Transactional
-  public ReminderDtos.Resp create(String userName, String text, Instant at) {
-    Long id = repo.create(userName, text, at);
+  public ReminderDtos.Resp create(long userId, String text, Instant at) {
+    Long id = repo.create(userId, text, at);
     return repo.get(id);
   }
 
   @Transactional(readOnly = true)
-  public List<ReminderDtos.Resp> listByUser(String userName, String status, int page, int size) {
-    return repo.listByUser(userName, status, page, size, Instant.now());
+  public List<ReminderDtos.Resp> listByUser(long userId, String status, int page, int size) {
+    return repo.listByUser(userId, status, page, size, Instant.now());
   }
 
   @Transactional
-  public void delete(long id) {
-    int n = repo.delete(id);
+  public void delete(long userId, long id) {
+    int n = repo.delete(userId, id);
     if (n == 0) throw new NotFoundException("Reminder not found: " + id);
   }
 
@@ -41,7 +41,7 @@ public class ReminderService {
     var due = repo.listDue(max, Instant.now());
     for (var r : due) {
       // TODO: 在此对接实际通知渠道（邮件/短信/企业微信/钉钉/FCM等）
-      log.info("[REMINDER] user={} at={} text={}", r.userName(), r.atTime(), r.text());
+      log.info("[REMINDER] at={} text={}", r.atTime(), r.text());
       repo.markSent(r.id());
     }
     return due;
